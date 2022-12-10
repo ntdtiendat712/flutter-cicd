@@ -1,0 +1,63 @@
+# Automatically generated on 2022-12-10 UTC from https://codemagic.io/app/6393c79726e1869a2d781731/settings
+# Note that this configuration is not an exact match to UI settings. Review and adjust as necessary.
+
+workflows:
+  default-workflow:
+    name: Default Workflow
+    max_build_duration: 60
+    environment:
+      vars:
+        key_ch_play: Encrypted(Z0FBQUFBQmprODBDU2lsSEtuVnZvNzZRM1JleVFSR1BoVFJsMC14anJvdzh3RWVqeEZRUXZqM1ZDN1lRdUNteU1aUFdHLVk2em9CYmVwWnIxbzByb1VtWkN5R0g5X3IyM2pEMUJNSGg2Nm5tM3ZxMlluRWpsWjZlQnBfZ0I5RTdOQUZub3h3czU0MUJGbGhQUkFUMEhwZDRKQnRpTVJHbkZRPT0=)
+        key_app_store: ONc7yeM/:&W@7P{&0lHiPQ[Xj0$W>Uj>:|8tKcDZp6A.OgK|}n/9,S$E|c<8wLI
+      flutter: default
+      xcode: latest
+      cocoapods: 1.11.1
+    cache:
+      cache_paths:
+        - $build/*
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: master
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: '*codemagic*'
+          include: true
+    scripts:
+      - |
+        # set up debug keystore
+        rm -f ~/.android/debug.keystore
+        keytool -genkeypair \
+          -alias androiddebugkey \
+          -keypass android \
+          -keystore ~/.android/debug.keystore \
+          -storepass android \
+          -dname 'CN=Android Debug,O=Android,C=US' \
+          -keyalg 'RSA' \
+          -keysize 2048 \
+          -validity 10000
+      - |
+        # set up local properties
+        echo "flutter.sdk=$HOME/programs/flutter" > "$FCI_BUILD_DIR/android/local.properties"
+      - flutter packages pub get
+      - flutter build apk --release
+      - find . -name "Podfile" -execdir pod install \;
+      - flutter build ios --release --no-codesign
+    artifacts:
+      - build/**/outputs/apk/**/*.apk
+      - build/**/outputs/bundle/**/*.aab
+      - build/**/outputs/**/mapping.txt
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - '*.snap'
+      - build/windows/**/*.msix
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - ntdtiendat712@gmail.com
+      slack:
+        channel: '#flash-cicd'
+        notify_on_build_start: true
